@@ -1,6 +1,8 @@
 # crack_me (reversing)
 
 > Do you have a key?
+>
+> [crack_me.exe](./assets/crack_me.exe) 
 
 Running `file` on the executable, you can see this is a Windows console executable:
 ```bash
