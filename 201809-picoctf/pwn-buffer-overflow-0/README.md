@@ -79,16 +79,18 @@ simplified):
 0x000001c return address
 ```
 
-Note that 24 bytes is allocated for the array because space for a null byte is needed to indicate the end of the
-array and we're working with 32-bit addresses.  You can confirm by using [`gdb`](https://www.gnu.org/software/gdb/) to
-disassemble the `vuln` function:
+You'd expect entering more than 16 bytes would start to overwrite memory (e.g. the saved base pointer), but this isn't
+the case due to stack alignment - the default in gcc is `2^4 = 16 bytes`, which means the stack must be aligned on a
+16-byte boundary before every `call` instruction.  You can confirm this using [`gdb`](https://www.gnu.org/software/gdb/)
+to disassemble the `vuln` function:
 
 ```
+$ gdb vuln
 gef➤  disassemble vuln
 Dump of assembler code for function vuln:
    0x08048667 <+0>:	push   ebp
    0x08048668 <+1>:	mov    ebp,esp
-   0x0804866a <+3>:	sub    esp,0x18 # space allocated for char array
+   0x0804866a <+3>:	sub    esp,0x18 # space allocated for char array - 24 bytes?!
    0x0804866d <+6>:	sub    esp,0x8
    0x08048670 <+9>:	push   DWORD PTR [ebp+0x8]
    0x08048673 <+12>:	lea    eax,[ebp-0x18]
@@ -109,8 +111,8 @@ $ ./vuln $(python2 -c "print 'A'*24")
 Segmentation fault (core dumped)
 ```
 
-Interestingly, this didn't cause the segfault handler to execute.  Try overwriting the return address by adding another
-4 characters:
+Interestingly, this didn't cause the segfault handler to execute (I'm not sure why - open a pull request if you do!).
+Try overwriting the return address by adding another 4 characters:
 
 ```
 $ ./vuln $(python2 -c "print 'A'*28")
